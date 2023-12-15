@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script id="vertex-shader" type="x-shader/x-vertex">
+    precision mediump float;
+
+    attribute vec4 vPosition;
+    attribute vec4 vColor;
+    attribute vec4 vNormal;
+  
+    varying vec4 fNormal;
+    varying vec4 fColor;
+  
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+  
+    void main() {
+      gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+      fColor = vColor;
+  
+      // Light and material properties
+      vec4 lightPosition = vec4(1.0, 2.0, 1.0, 0.0);
+      vec4 lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+      vec4 lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);  // White light
+      vec4 lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+  
+      vec4 materialAmbient = vec4(0.0, 0.0, 0.0, 1.0);
+      vec4 materialDiffuse = vec4(1.0, 0.0, 0.0, 1.0); // Red material
+      vec4 materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+      float materialShininess = 20.0;
+  
+      vec4 ambientProduct = lightAmbient * materialAmbient;
+      vec4 diffuseProduct = lightDiffuse * materialDiffuse;
+      vec4 specularProduct = lightSpecular * materialSpecular;
+  
+      vec4 ecPosition = modelViewMatrix * vPosition;
+      vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
+      vec3 lightVec = normalize(lightPosition.xyz - ecPosition.xyz);
+      vec3 eyeVec = normalize(-ecPosition.xyz);
+      vec3 halfwayVec = normalize(lightVec + eyeVec);
+  
+      float diffuse = max(dot(normal, lightVec), 0.0);
+      float specular = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
+  
+      fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
+    }
+  </script>
+
+  <script id="fragment-shader" type="x-shader/x-fragment">
+      precision mediump float;
+      
+      varying vec4 fNormal;
+      varying vec4 fColor;
+      
+      void main() 
+      {
+        gl_FragColor = fColor;
+      }
+    </script>
+
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <script type="text/javascript" src="../common/webgl-utils.js"></script>
+  <script type="text/javascript" src="../common/initShaders.js"></script>
+  <script type="text/javascript" src="../common/MV.js"></script>
+  <script type="text/javascript" src="breather.js"></script>
+</head>
+
+<body>
+  <canvas id="gl-canvas" width="750" height="750" name="canvas">
+    Oops ... your browser doesn't support the HTML5 canvas element
+  </canvas>
+
+  <div id="UISettings" class="UIBox">
+    <div id="UISettingsHeader">Settings</div>
+    <div class="break15"></div>
+    <div class="startBox">
+      <div class="columnBox">
+        <label class="container">Wireframe
+          <input type="radio" checked="checked" name="radioShader" id="Wireframe">
+          <span class="checkmark"></span>
+        </label>
+        <label class="container">Phong
+          <input type="radio" name="radioShader" id="Phong">
+          <span class="checkmark"></span>
+        </label>
+        <label class="container">Gouraud
+          <input type="radio" name="radioShader" id="Gouraud">
+          <span class="checkmark"></span>
+        </label>
+      </div>
+    </div>
+    <div class="break15"></div>
+    <div class="break5"></div>
+    <div class="columnBox">
+      <div class="box">
+        <div class="textDiv">
+          U Range:
+        </div>
+        <input type="text" id="uRange" class="sliderValues" value="14" disabled>
+        <div class="numberDiv">
+          0
+          <input id="uSlider" type="range" min="0" max="28" step="1" value="14" />
+          28
+        </div>
+      </div>
+      <div class="break15"></div>
+      <div class="box">
+        <div class="textDiv">
+          V range:
+        </div>
+        <input type="text" id="vRange" class="sliderValues" value="30" disabled>
+        <div class="numberDiv">
+          0
+          <input id="vSlider" type="range" min="0" max="37.5" step="1" value="30" />
+          37.5
+        </div>
+      </div>
+    </div>
+    <div class="break15"></div>
+    <div class="break5"></div>
+    <div class="columnBox">
+      <div class="box">
+        <div class="textDiv">
+          du:
+        </div>
+        <input type="text" id="duText" class="sliderValues" value="0.5" disabled>
+        <div class="numberDiv">
+          0.1
+          <input id="dUSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+          1.0
+        </div>
+      </div>
+      <div class="break15"></div>
+      <div class="box">
+        <div class="textDiv">
+          dv:
+        </div>
+        <input type="text" id="dvText" class="sliderValues" value="0.5" disabled>
+        <div class="numberDiv">
+          0.1
+          <input id="dVSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+          1.0
+        </div>
+      </div>
+      <div class="break15"></div>
+      <div class="box">
+        <div class="textDiv">
+          aa:
+        </div>
+        <input type="text" id="aaText" class="sliderValues" value="0.5" disabled>
+        <div class="numberDiv">
+          0.1
+          <input id="aaSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+          1.0
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
