@@ -11,6 +11,7 @@
   
     varying vec4 fNormal;
     varying vec4 fColor;
+    varying vec3 N, L, E;
   
     uniform mat4 modelViewMatrix;
     uniform mat4 projectionMatrix;
@@ -30,7 +31,10 @@
       if (shaderType == 0) {
         fColor = vec4(1.0, 1.0, 1.0, 1.0);
       } else if (shaderType == 1) {
-        vec4 ecPosition = modelViewMatrix * vPosition;
+        vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
+
+
+
         vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
         vec3 lightVec = normalize(lightPosition.xyz - ecPosition.xyz);
         vec3 eyeVec = normalize(-ecPosition.xyz);
@@ -41,15 +45,31 @@
   
         fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
       } else {
+        vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
         vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
-        vec3 lightVec = normalize(lightPosition.xyz - vPosition.xyz);
-        vec3 eyeVec = normalize(-vPosition.xyz);
+        vec3 lightVec;
+        if (lightPosition.w == 0.0) {
+          lightVec = normalize(lightPosition.xyz);
+        } else {
+          lightVec = normalize(lightPosition.xyz - ecPosition);
+        }
+        vec3 eyeVec = -normalize(ecPosition);
         vec3 halfwayVec = normalize(lightVec + eyeVec);
-  
-        float diffuse = max(dot(normal, lightVec), 0.0);
-        float specular = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
-  
-        fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
+        
+
+
+        float Kd = max(dot(lightVec, normal), 0.0);
+        vec4 diffuse = Kd * diffuseProduct;
+
+        float Ks = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
+        vec4 specular = Ks * specularProduct;
+
+        if (dot(lightVec, normal) < 0.0) {
+          specular = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        
+        fColor = ambientProduct + diffuse + specular;
+        fColor.a = 1.0;
       }
     }
   </script>
