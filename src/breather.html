@@ -9,10 +9,11 @@
     attribute vec4 vColor;
     attribute vec4 vNormal;
   
-    varying vec4 fNormal;
     varying vec4 fColor;
     varying vec3 N, L, E;
-  
+    varying float fShaderType;
+
+
     uniform mat4 modelViewMatrix;
     uniform mat4 projectionMatrix;
     uniform vec4 lightPosition;
@@ -20,7 +21,7 @@
     uniform vec4 diffuseProduct;
     uniform vec4 specularProduct;
     uniform float materialShininess;
-    uniform int shaderType;
+    uniform int shaderType;    
   
     void main() {
       gl_Position = projectionMatrix * modelViewMatrix * vPosition;
@@ -28,22 +29,18 @@
       // shader type = 0: wireframe
       // shader type = 1: phong
       // shader type = 2: gouraud
+      fShaderType = float(shaderType);
+
       if (shaderType == 0) {
         fColor = vec4(1.0, 1.0, 1.0, 1.0);
       } else if (shaderType == 1) {
         vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
 
+        if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
+        else L = normalize( lightPosition.xyz - ecPosition );
 
-
-        vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
-        vec3 lightVec = normalize(lightPosition.xyz - ecPosition.xyz);
-        vec3 eyeVec = normalize(-ecPosition.xyz);
-        vec3 halfwayVec = normalize(lightVec + eyeVec);
-  
-        float diffuse = max(dot(normal, lightVec), 0.0);
-        float specular = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
-  
-        fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
+        N = normalize( mat3(modelViewMatrix) * vNormal.xyz );
+        E = -normalize( ecPosition );
       } else {
         vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
         vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
@@ -77,14 +74,39 @@
   <script id="fragment-shader" type="x-shader/x-fragment">
       precision mediump float;
       
-      varying vec4 fNormal;
       varying vec4 fColor;
+      varying vec3 N, L, E;
+      varying float fShaderType;
+      uniform vec4 ambientProduct;
+      uniform vec4 diffuseProduct;
+      uniform vec4 specularProduct;
+      uniform float materialShininess;
       
       void main() 
       { 
-        gl_FragColor = fColor;
+        if (fShaderType != 1.0) {
+          gl_FragColor = fColor;
+        } else {
+          vec4 phongColor;
+
+          vec3 H = normalize( L + E );
+          vec4 ambient = ambientProduct;
+      
+          float Kd = max( dot(L, N), 0.0 );
+          vec4  diffuse = Kd*diffuseProduct;
+      
+          float Ks = pow( max(dot(N, H), 0.0), materialShininess );
+          vec4  specular = Ks * specularProduct;
+          
+          if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+      
+          phongColor = ambient + diffuse +specular;
+          phongColor.a = 1.0;
+
+          gl_FragColor = phongColor;
+        }
       }
-    </script>
+  </script>
 
   <link rel="stylesheet" type="text/css" href="styles.css">
   <script type="text/javascript" src="../common/webgl-utils.js"></script>
