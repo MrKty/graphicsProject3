@@ -1,248 +1,264 @@
-<!DOCTYPE html>
-<html>
+  <!DOCTYPE html>
+  <html>
 
-<head>
-  <script id="vertex-shader" type="x-shader/x-vertex">
-    precision mediump float;
-
-    attribute vec4 vPosition;
-    attribute vec4 vColor;
-    attribute vec4 vNormal;
-  
-    varying vec4 fColor;
-    varying vec3 N, L, E;
-    varying float fShaderType;
-
-
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
-    uniform vec4 lightPosition;
-    uniform vec4 ambientProduct;
-    uniform vec4 diffuseProduct;
-    uniform vec4 specularProduct;
-    uniform float materialShininess;
-    uniform int shaderType;    
-  
-    void main() {
-      gl_Position = projectionMatrix * modelViewMatrix * vPosition;
-
-      // shader type = 0: wireframe
-      // shader type = 1: phong
-      // shader type = 2: gouraud
-      fShaderType = float(shaderType);
-
-      if (shaderType == 0) {
-        fColor = vec4(1.0, 1.0, 1.0, 1.0);
-      } else if (shaderType == 1) {
-        vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
-
-        if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
-        else L = normalize( lightPosition.xyz - ecPosition );
-
-        N = normalize( mat3(modelViewMatrix) * vNormal.xyz );
-        E = -normalize( ecPosition );
-      } else {
-        vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
-        vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
-        vec3 lightVec;
-        if (lightPosition.w == 0.0) {
-          lightVec = normalize(lightPosition.xyz);
-        } else {
-          lightVec = normalize(lightPosition.xyz - ecPosition);
-        }
-        vec3 eyeVec = -normalize(ecPosition);
-        vec3 halfwayVec = normalize(lightVec + eyeVec);
-        
-
-
-        float Kd = max(dot(lightVec, normal), 0.0);
-        vec4 diffuse = Kd * diffuseProduct;
-
-        float Ks = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
-        vec4 specular = Ks * specularProduct;
-
-        if (dot(lightVec, normal) < 0.0) {
-          specular = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-        
-        fColor = ambientProduct + diffuse + specular;
-        fColor.a = 1.0;
-      }
-    }
-  </script>
-
-  <script id="fragment-shader" type="x-shader/x-fragment">
+  <head>
+    <script id="vertex-shader" type="x-shader/x-vertex">
       precision mediump float;
-      
+
+      attribute vec4 vPosition;
+
+      attribute vec4 vNormal;
+    
       varying vec4 fColor;
       varying vec3 N, L, E;
       varying float fShaderType;
+      varying vec3 R;
+
+      uniform mat4 modelViewMatrix;
+      uniform mat4 projectionMatrix;
+      uniform vec4 lightPosition;
       uniform vec4 ambientProduct;
       uniform vec4 diffuseProduct;
       uniform vec4 specularProduct;
       uniform float materialShininess;
+      uniform int shaderType;    
+    
+      void main() {
+        gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+
+        // shader type = 0: wireframe
+        // shader type = 1: phong
+        // shader type = 2: gouraud
+    
+        fShaderType = float(shaderType);
+        fColor = vec4(1.0, 1.0, 1.0, 1.0);
+        if (shaderType == 0) {
+          fColor = vec4(1.0, 1.0, 1.0, 1.0);
       
-      void main() 
-      { 
-        if (fShaderType != 1.0) {
-          gl_FragColor = fColor;
+        } else if (shaderType == 1) {
+          vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
+
+          if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
+          else L = normalize( lightPosition.xyz - ecPosition );
+
+          N = normalize( mat3(modelViewMatrix) * vNormal.xyz );
+          E = normalize( ecPosition );
+          R = reflect(ecPosition, N);
+
         } else {
-          vec4 phongColor;
-
-          vec3 H = normalize( L + E );
-          vec4 ambient = ambientProduct;
-      
-          float Kd = max( dot(L, N), 0.0 );
-          vec4  diffuse = Kd*diffuseProduct;
-      
-          float Ks = pow( max(dot(N, H), 0.0), materialShininess );
-          vec4  specular = Ks * specularProduct;
+          // Gouraud Shading
+          vec3 ecPosition = (modelViewMatrix * vPosition).xyz;
+          vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
+          vec3 lightVec;
           
-          if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
-      
-          phongColor = ambient + diffuse +specular;
-          phongColor.a = 1.0;
-
-          gl_FragColor = phongColor;
-        }
+          if (lightPosition.w == 0.0) {
+              lightVec = normalize(lightPosition.xyz);
+          } else {
+              lightVec = normalize(lightPosition.xyz - ecPosition);
+          }
+          
+          vec3 eyeVec = -normalize(ecPosition);
+          vec3 halfwayVec = normalize(lightVec + eyeVec);
+          R = reflect(-ecPosition, normal);  // Corrected reflection calculation
+  
+          float Kd = max(dot(lightVec, normal), 0.0);
+          vec4 diffuse = Kd * diffuseProduct;
+  
+          float Ks = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
+          vec4 specular = Ks * specularProduct;
+  
+          if (dot(lightVec, normal) < 0.0) {
+              specular = vec4(0.0, 0.0, 0.0, 1.0);
+          }
+  
+          fColor = ambientProduct + diffuse + specular;
+          fColor.a = 1.0;
       }
-  </script>
 
-  <link rel="stylesheet" type="text/css" href="styles.css">
-  <script type="text/javascript" src="../common/webgl-utils.js"></script>
-  <script type="text/javascript" src="../common/initShaders.js"></script>
-  <script type="text/javascript" src="../common/MV.js"></script>
-  <script type="text/javascript" src="breather.js"></script>
-</head>
+      }
+    </script>
 
-<body>
-  <canvas id="gl-canvas" width="750" height="750" name="canvas">
-    Oops ... your browser doesn't support the HTML5 canvas element
-  </canvas>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        
+        varying vec4 fColor;
+        varying vec3 N, L, E;
+        varying float fShaderType; 
+        varying vec3 R;
 
-  <div id="UISettings" class="UIBox">
-    <div id="UISettingsHeader">Settings</div>
-    <div class="break15"></div>
-    <div class="startBox">
+        uniform vec4 ambientProduct;
+        uniform vec4 diffuseProduct;
+        uniform vec4 specularProduct;
+        uniform float materialShininess;
+        uniform samplerCube texMap;
+        
+        void main() 
+        { 
+          vec4 texColor = textureCube(texMap, R);
+          if (fShaderType != 1.0) {
+            gl_FragColor =  fColor * texColor;
+          } else {  
+            vec4 phongColor;
+
+            vec3 H = normalize(L + E);
+            vec3 N = normalize(N);
+            vec3 L = normalize(L);
+            vec3 E = normalize(E);
+
+            vec4 ambient = ambientProduct;
+        
+            float Kd = max(dot(L, N), 0.0);
+            vec4 diffuse = Kd * diffuseProduct;
+        
+            float Ks = pow(max(dot(N, H), 0.0), materialShininess);
+            vec4 specular = Ks * specularProduct;
+
+            // Check if the light is coming from behind the surface
+            if (dot(L, N) < 0.0) specular = vec4(0.0, 0.0, 0.0, 1.0);
+        
+            phongColor = ambient + diffuse + specular;
+            phongColor.a = 1.0;
+          
+            gl_FragColor = phongColor * texColor;
+        }
+        }
+    </script>
+
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script type="text/javascript" src="../common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../common/initShaders.js"></script>
+    <script type="text/javascript" src="../common/MV.js"></script>
+    <script type="text/javascript" src="breather.js"></script>
+  </head>
+
+  <body>
+    <canvas id="gl-canvas" width="750" height="750" name="canvas">
+      Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+
+    <div id="UISettings" class="UIBox">
+      <div id="UISettingsHeader">Settings</div>
+      <div class="break15"></div>
+      <div class="startBox">
+        <div class="columnBox">
+          <label class="container">Wireframe
+            <input type="radio" checked="checked" name="radioShader" id="Wireframe">
+            <span class="checkmark"></span>
+          </label>
+          <label class="container">Phong
+            <input type="radio" name="radioShader" id="Phong">
+            <span class="checkmark"></span>
+          </label>
+          <label class="container">Gouraud
+            <input type="radio" name="radioShader" id="Gouraud">
+            <span class="checkmark"></span>
+          </label>
+        </div>
+      </div>
+      <div class="break15"></div>
+      <div class="break5"></div>
       <div class="columnBox">
-        <label class="container">Wireframe
-          <input type="radio" checked="checked" name="radioShader" id="Wireframe">
-          <span class="checkmark"></span>
-        </label>
-        <label class="container">Phong
-          <input type="radio" name="radioShader" id="Phong">
-          <span class="checkmark"></span>
-        </label>
-        <label class="container">Gouraud
-          <input type="radio" name="radioShader" id="Gouraud">
-          <span class="checkmark"></span>
-        </label>
-      </div>
-    </div>
-    <div class="break15"></div>
-    <div class="break5"></div>
-    <div class="columnBox">
-      <div class="box">
-        <div class="textDiv">
-          U Range:
+        <div class="box">
+          <div class="textDiv">
+            U Range:
+          </div>
+          <input type="text" id="uRange" class="sliderValues" value="14" disabled>
+          <div class="numberDiv">
+            0
+            <input id="uSlider" type="range" min="0" max="28" step="1" value="14" />
+            28
+          </div>
         </div>
-        <input type="text" id="uRange" class="sliderValues" value="14" disabled>
-        <div class="numberDiv">
-          0
-          <input id="uSlider" type="range" min="0" max="28" step="1" value="14" />
-          28
+        <div class="break15"></div>
+        <div class="box">
+          <div class="textDiv">
+            V range:
+          </div>
+          <input type="text" id="vRange" class="sliderValues" value="30" disabled>
+          <div class="numberDiv">
+            0
+            <input id="vSlider" type="range" min="0" max="37.5" step="1" value="30" />
+            37.5
+          </div>
         </div>
       </div>
       <div class="break15"></div>
-      <div class="box">
-        <div class="textDiv">
-          V range:
+      <div class="break5"></div>
+      <div class="columnBox">
+        <div class="box">
+          <div class="textDiv">
+            du:
+          </div>
+          <input type="text" id="duText" class="sliderValues" value="0.5" disabled>
+          <div class="numberDiv">
+            0.1
+            <input id="dUSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+            1.0
+          </div>
         </div>
-        <input type="text" id="vRange" class="sliderValues" value="30" disabled>
-        <div class="numberDiv">
-          0
-          <input id="vSlider" type="range" min="0" max="37.5" step="1" value="30" />
-          37.5
+        <div class="break15"></div>
+        <div class="box">
+          <div class="textDiv">
+            dv:
+          </div>
+          <input type="text" id="dvText" class="sliderValues" value="0.5" disabled>
+          <div class="numberDiv">
+            0.1
+            <input id="dVSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+            1.0
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="break15"></div>
-    <div class="break5"></div>
-    <div class="columnBox">
-      <div class="box">
-        <div class="textDiv">
-          du:
-        </div>
-        <input type="text" id="duText" class="sliderValues" value="0.5" disabled>
-        <div class="numberDiv">
-          0.1
-          <input id="dUSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
-          1.0
-        </div>
-      </div>
-      <div class="break15"></div>
-      <div class="box">
-        <div class="textDiv">
-          dv:
-        </div>
-        <input type="text" id="dvText" class="sliderValues" value="0.5" disabled>
-        <div class="numberDiv">
-          0.1
-          <input id="dVSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
-          1.0
-        </div>
-      </div>
-      <div class="break15"></div>
-      <div class="box">
-        <div class="textDiv">
-          aa:
-        </div>
-        <input type="text" id="aaText" class="sliderValues" value="0.5" disabled>
-        <div class="numberDiv">
-          0.1
-          <input id="aaSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
-          1.0
+        <div class="break15"></div>
+        <div class="box">
+          <div class="textDiv">
+            aa:
+          </div>
+          <input type="text" id="aaText" class="sliderValues" value="0.5" disabled>
+          <div class="numberDiv">
+            0.1
+            <input id="aaSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+            1.0
+          </div>
         </div>
       </div>
-    </div>
-    <div class="columnBox">
-      <div class="box">
-        <div class="textDiv">
-          Light X:
+      <div class="columnBox">
+        <div class="box">
+          <div class="textDiv">
+            Light X:
+          </div>
+          <input type="text" id="lightXText" class="sliderValues" value="1.0" disabled>
+          <div class="numberDiv">
+            -1.0
+            <input id="lightXSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
+            2.0
+          </div>
         </div>
-        <input type="text" id="lightXText" class="sliderValues" value="1.0" disabled>
-        <div class="numberDiv">
-          -1.0
-          <input id="lightXSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
-          2.0
+        <div class="break15"></div>
+        <div class="box">
+          <div class="textDiv">
+            Light Y:
+          </div>
+          <input type="text" id="lightYText" class="sliderValues" value="1.0" disabled>
+          <div class="numberDiv">
+            0.0
+            <input id="lightYSlider" type="range" min="0.0" max="4.0" step="0.1" value="1.0" />
+            4.0
+          </div>
         </div>
-      </div>
-      <div class="break15"></div>
-      <div class="box">
-        <div class="textDiv">
-          Light Y:
-        </div>
-        <input type="text" id="lightYText" class="sliderValues" value="1.0" disabled>
-        <div class="numberDiv">
-          0.0
-          <input id="lightYSlider" type="range" min="0.0" max="4.0" step="0.1" value="1.0" />
-          4.0
-        </div>
-      </div>
-      <div class="break15"></div>
-      <div class="box">
-        <div class="textDiv">
-          Light Z:
-        </div>
-        <input type="text" id="lightZText" class="sliderValues" value="1.0" disabled>
-        <div class="numberDiv">
-          0.0
-          <input id="lightZSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
-          2.0
+        <div class="break15"></div>
+        <div class="box">
+          <div class="textDiv">
+            Light Z:
+          </div>
+          <input type="text" id="lightZText" class="sliderValues" value="1.0" disabled>
+          <div class="numberDiv">
+            0.0
+            <input id="lightZSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
+            2.0
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
+  </body>
 
-</html>
+  </html>

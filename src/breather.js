@@ -38,6 +38,13 @@ let du = 0.5;
 let dv = 0.5;
 let aa = 0.5;
 
+var theta = [0.0, 0.0, 0.0];
+
+
+var xAxis = 0;
+var yAxis = 1;
+var zAxis = 2;
+var axis = xAxis;
 
 // Define light and material properties
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
@@ -45,9 +52,9 @@ var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0); 
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
-var materialAmbient = vec4(1.0, 0.0, 1.0, 1.0);
-var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
-var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
+var materialAmbient = vec4(1.0, 1.0, 1.0, 1.0);
+var materialDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
+var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var materialShininess = 100.0;
 
 /***************************************************
@@ -97,6 +104,8 @@ window.onload = function init() {
 
   setShaderUniforms();
 
+  configureCubeMap();
+
   // Add sliders for light properties
   setupSlider("lightXSlider", "lightXText", "lightPositionX");
   setupSlider("lightYSlider", "lightYText", "lightPositionY");
@@ -111,8 +120,13 @@ window.onload = function init() {
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  gl.activeTexture( gl.TEXTURE0 );
+  gl.uniform1i(gl.getUniformLocation(program, "texMap"),0);
+  
   projectionMatrix = perspective(fov, 1, 0.02, 100);
   modelViewMatrix = lookAt(vec3(eyeX, eyeY, eyeZ), vec3(0, 0, 0), vec3(0, 1, 0));
+
+
 
   gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(modelViewMatrix));
   gl.uniformMatrix4fv(gl.getUniformLocation(program, "projectionMatrix"), false, flatten(projectionMatrix));
@@ -132,7 +146,9 @@ function generateBreatherSurface() {
 }
 
 function drawObject() {
-  processBuffers(vec4(0.0, 0.0, 0.0, 1.0), verticesE, normalsE, indicesE);
+
+  processBuffers( verticesE, normalsE, indicesE);
+
 
   if (shaderMode === WIREFRAME) {
     gl.drawElements(gl.LINE_STRIP, indicesE.length, gl.UNSIGNED_SHORT, indexBuffer);
@@ -152,11 +168,6 @@ function generateBreatherVertices() {
   verticesE = [];
 
   loopSizeE = 0;
-
-  console.log("du: ", du);
-  console.log("dv: ", dv);
-  console.log("uRange", uRange);
-  console.log("vRange: ", vRange);
 
 
   for (var u = -uRange; u < uRange; u += du) {
@@ -187,32 +198,27 @@ function generateBreatherNormals() {
     );
   }
 
-  for (var i = 0; i < loopSizeE - 1; i++) {
-    for (var j = 0; j < loopSizeE - 1; j++) {
-      // Indices of the current quad
-      var idx0 = i * loopSizeE + j;
-      var idx1 = idx0 + 1;
-      var idx2 = (i + 1) * loopSizeE + j;
-      var idx3 = idx2 + 1;
+  for (var i = 0; i < loopSizeE; i++) {
+    for (var j = 0; j < loopSizeE; j++) {
+      // Indices of the current vertex
+      var idx = i * loopSizeE + j;
 
-      // Vertices of the current quad
-      var v0 = verticesE[idx0];
-      var v1 = verticesE[idx1];
-      var v2 = verticesE[idx2];
-      var v3 = verticesE[idx3];
+      // Vertices of the current vertex
+      var v = verticesE[idx];
 
       // Calculate tangent vectors with respect to u and v
-      var tangentU = subtract(v1, v0);
-      var tangentV = subtract(v2, v0);
+      var tangentU = subtract(verticesE[(i + 1) * loopSizeE + j], v);
+      var tangentV = subtract(verticesE[i * loopSizeE + (j + 1)], v);
 
       // Calculate normal using cross product
       var normal = normalize(cross(tangentU, tangentV));
 
-      // Assign the same normal to each vertex of the quad
-      normalsE.push(normal, normal, normal, normal);
+      // Assign the normal to the current vertex
+      normalsE.push(normal);
     }
   }
 }
+
 
 /***************************************************
   Breather Index Generator
@@ -225,8 +231,13 @@ function generateBreatherIndices() {
       indicesE.push(i * loopSizeE + j);
       indicesE.push((i + 1) * loopSizeE + j);
     }
+
+    // Add a degenerate triangle to connect strips
+    indicesE.push((i + 1) * loopSizeE + loopSizeE - 1);
+    indicesE.push((i + 1) * loopSizeE);
   }
 }
+
 
 var theta = 0;
 var phi = 0;
@@ -258,6 +269,32 @@ function setupShaderMode(id, mode) {
     setShaderType();
     generateBreatherSurface();
   };
+}
+
+function configureCubeMap() {
+  cubeMap = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMap);
+
+  // Load each face of the cube map with the image
+  loadCubeMapFace("pos-x.jpg", gl.TEXTURE_CUBE_MAP_POSITIVE_X);
+  loadCubeMapFace("neg-x.jpg", gl.TEXTURE_CUBE_MAP_NEGATIVE_X);
+  loadCubeMapFace("pos-y.jpg", gl.TEXTURE_CUBE_MAP_POSITIVE_Y);
+  loadCubeMapFace("neg-y.jpg", gl.TEXTURE_CUBE_MAP_NEGATIVE_Y);
+  loadCubeMapFace("pos-z.jpg", gl.TEXTURE_CUBE_MAP_POSITIVE_Z);
+  loadCubeMapFace("neg-z.jpg", gl.TEXTURE_CUBE_MAP_NEGATIVE_Z);
+
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+
+}
+
+function loadCubeMapFace(url, target) {
+  var image = new Image();
+  image.onload = function () {
+      gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  };
+  image.src = url;
 }
 
 function setupSlider(id, rangeId, variable) {
@@ -300,21 +337,9 @@ function setupSlider(id, rangeId, variable) {
 /***************************************************
   Vertex buffers with colors
 ****************************************************/
-function processBuffers(color, vertices, normals, indices) {
-  var colors = [];
+function processBuffers( vertices, normals, indices) {
+  
 
-  // Create color array as much as vertices length
-  for (var i = 0; i < vertices.length; i++)
-    colors.push(color);
-
-  // Load the color data into the GPU
-  var cBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
-  // Associate out vertex color variables with our color buffer
-  var vColor = gl.getAttribLocation(program, "vColor");
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vColor);
 
   // Load the vertex data into the GPU
   var vBuffer = gl.createBuffer();
@@ -337,6 +362,10 @@ function processBuffers(color, vertices, normals, indices) {
   indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+
+ 
+
 }
 
 
