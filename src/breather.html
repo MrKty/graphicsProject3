@@ -14,36 +14,43 @@
   
     uniform mat4 modelViewMatrix;
     uniform mat4 projectionMatrix;
+    uniform vec4 lightPosition;
+    uniform vec4 ambientProduct;
+    uniform vec4 diffuseProduct;
+    uniform vec4 specularProduct;
+    uniform float materialShininess;
+    uniform int shaderType;
   
     void main() {
       gl_Position = projectionMatrix * modelViewMatrix * vPosition;
-      fColor = vColor;
+
+      // shader type = 0: wireframe
+      // shader type = 1: phong
+      // shader type = 2: gouraud
+      if (shaderType == 0) {
+        fColor = vec4(1.0, 1.0, 1.0, 1.0);
+      } else if (shaderType == 1) {
+        vec4 ecPosition = modelViewMatrix * vPosition;
+        vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
+        vec3 lightVec = normalize(lightPosition.xyz - ecPosition.xyz);
+        vec3 eyeVec = normalize(-ecPosition.xyz);
+        vec3 halfwayVec = normalize(lightVec + eyeVec);
   
-      // Light and material properties
-      vec4 lightPosition = vec4(1.0, 2.0, 1.0, 0.0);
-      vec4 lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
-      vec4 lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);  // White light
-      vec4 lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+        float diffuse = max(dot(normal, lightVec), 0.0);
+        float specular = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
   
-      vec4 materialAmbient = vec4(0.0, 0.0, 0.0, 1.0);
-      vec4 materialDiffuse = vec4(1.0, 0.0, 0.0, 1.0); // Red material
-      vec4 materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-      float materialShininess = 20.0;
+        fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
+      } else {
+        vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
+        vec3 lightVec = normalize(lightPosition.xyz - vPosition.xyz);
+        vec3 eyeVec = normalize(-vPosition.xyz);
+        vec3 halfwayVec = normalize(lightVec + eyeVec);
   
-      vec4 ambientProduct = lightAmbient * materialAmbient;
-      vec4 diffuseProduct = lightDiffuse * materialDiffuse;
-      vec4 specularProduct = lightSpecular * materialSpecular;
+        float diffuse = max(dot(normal, lightVec), 0.0);
+        float specular = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
   
-      vec4 ecPosition = modelViewMatrix * vPosition;
-      vec3 normal = normalize(mat3(modelViewMatrix) * vNormal.xyz);
-      vec3 lightVec = normalize(lightPosition.xyz - ecPosition.xyz);
-      vec3 eyeVec = normalize(-ecPosition.xyz);
-      vec3 halfwayVec = normalize(lightVec + eyeVec);
-  
-      float diffuse = max(dot(normal, lightVec), 0.0);
-      float specular = pow(max(dot(normal, halfwayVec), 0.0), materialShininess);
-  
-      fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
+        fColor = ambientProduct + diffuseProduct * diffuse + specularProduct * specular;
+      }
     }
   </script>
 
@@ -54,7 +61,7 @@
       varying vec4 fColor;
       
       void main() 
-      {
+      { 
         gl_FragColor = fColor;
       }
     </script>
@@ -153,6 +160,43 @@
           0.1
           <input id="aaSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
           1.0
+        </div>
+      </div>
+    </div>
+    <div class="columnBox">
+      <div class="box">
+        <div class="textDiv">
+          Light X:
+        </div>
+        <input type="text" id="lightXText" class="sliderValues" value="1.0" disabled>
+        <div class="numberDiv">
+          -1.0
+          <input id="lightXSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
+          2.0
+        </div>
+      </div>
+      <div class="break15"></div>
+      <div class="box">
+        <div class="textDiv">
+          Light Y:
+        </div>
+        <input type="text" id="lightYText" class="sliderValues" value="1.0" disabled>
+        <div class="numberDiv">
+          0.0
+          <input id="lightYSlider" type="range" min="0.0" max="4.0" step="0.1" value="1.0" />
+          4.0
+        </div>
+      </div>
+      <div class="break15"></div>
+      <div class="box">
+        <div class="textDiv">
+          Light Z:
+        </div>
+        <input type="text" id="lightZText" class="sliderValues" value="1.0" disabled>
+        <div class="numberDiv">
+          0.0
+          <input id="lightZSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
+          2.0
         </div>
       </div>
     </div>

@@ -38,6 +38,18 @@ let du = 0.5;
 let dv = 0.5;
 let aa = 0.5;
 
+
+// Define light and material properties
+var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0); 
+var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+
+var materialAmbient = vec4(1.0, 0.0, 1.0, 1.0);
+var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
+var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
+var materialShininess = 100.0;
+
 /***************************************************
   Init function of window
 ****************************************************/
@@ -82,6 +94,13 @@ window.onload = function init() {
   setupSlider("dUSlider", "duText", "du");
   setupSlider("dVSlider", "dvText", "dv");
   setupSlider("aaSlider", "aaText", "aa");
+
+  setShaderUniforms();
+
+  // Add sliders for light properties
+  setupSlider("lightXSlider", "lightXText", "lightPositionX");
+  setupSlider("lightYSlider", "lightYText", "lightPositionY");
+  setupSlider("lightZSlider", "lightZText", "lightPositionZ");
 
   render();
 };
@@ -216,6 +235,23 @@ var prevY;
 var prevTheta = 0;
 var prevPhi = 0;
 
+// Set light and material properties as shader uniforms
+function setShaderUniforms() {
+  var ambientProduct = mult(lightAmbient, materialAmbient);
+  var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+  var specularProduct = mult(lightSpecular, materialSpecular);
+
+  gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
+  gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
+  gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+  gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
+  gl.uniform1f(gl.getUniformLocation(program, "materialShininess"), materialShininess);
+}
+
+function setShaderType() {
+  gl.uniform1i(gl.getUniformLocation(program, "shaderType"), shaderMode);
+}
+
 
 /***************************************************
   Camera movement function 
@@ -278,6 +314,7 @@ function camera() {
 function setupShaderMode(id, mode) {
   document.getElementById(id).onchange = function () {
     shaderMode = mode;
+    setShaderType();
     generateBreatherSurface();
   };
 }
@@ -302,6 +339,18 @@ function setupSlider(id, rangeId, variable) {
       case "aa":
         aa = parseFloat(sliderValue);
         break;
+      case "lightPositionX":
+        lightPosition[0] = parseFloat(sliderValue);
+        break;
+      case "lightPositionY":
+        lightPosition[1] = parseFloat(sliderValue);
+        break;
+      case "lightPositionZ":
+        lightPosition[2] = parseFloat(sliderValue);
+        break;
+    }
+    if (variable === "lightPositionX" || variable === "lightPositionY" || variable === "lightPositionZ") {
+      setShaderUniforms();
     }
     generateBreatherSurface();
   };
