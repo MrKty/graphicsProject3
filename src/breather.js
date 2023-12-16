@@ -252,65 +252,6 @@ function setShaderType() {
   gl.uniform1i(gl.getUniformLocation(program, "shaderType"), shaderMode);
 }
 
-
-/***************************************************
-  Camera movement function 
-  which decides object rotation
-****************************************************/
-function cameraMovement(event) {
-  var curX = 2 * event.clientX / canvas.width - 1;
-  var curY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
-  theta = prevTheta + (curY - prevY) * Math.PI / 20;
-  phi = prevPhi - (curX - prevX) * Math.PI / 20;
-
-  eyeX = eyeX;
-  eyeY = eyeY * Math.cos(theta) - eyeZ * Math.sin(theta);
-  eyeZ = eyeY * Math.sin(theta) + eyeZ * Math.cos(theta);
-
-  eyeX = eyeX * Math.cos(phi) + eyeZ * Math.sin(phi);
-  eyeY = eyeY;
-  eyeZ = -eyeX * Math.sin(phi) + eyeZ * Math.cos(phi);
-
-  var normalizedEye = normalize(vec3(eyeX, eyeY, eyeZ));
-  eyeX = 11 * normalizedEye[0];
-  eyeY = 11 * normalizedEye[1];
-  eyeZ = 11 * normalizedEye[2];
-}
-
-/***************************************************
-  Camera listeners
-****************************************************/
-function camera() {
-  canvas.onmousedown = function (event) {
-    prevX = 2 * event.clientX / canvas.width - 1;
-    prevY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
-    isCameraMoving = true;
-    canvas.style.cursor = "grabbing";
-  }
-
-  canvas.onmouseup = function (event) {
-    isCameraMoving = false;
-    prevTheta = theta;
-    prevPhi = phi;
-    canvas.style.cursor = "grab";
-  }
-
-  canvas.onmousemove = function (event) {
-    if (isCameraMoving) {
-      cameraMovement(event);
-      canvas.style.cursor = "grabbing";
-    }
-    else {
-      canvas.style.cursor = "grab";
-    }
-  }
-
-  canvas.onwheel = function (event) {
-    wheel = event.wheelDelta / 240;
-    fov = fov - wheel;
-  }
-}
-
 function setupShaderMode(id, mode) {
   document.getElementById(id).onchange = function () {
     shaderMode = mode;
@@ -396,6 +337,65 @@ function processBuffers(color, vertices, normals, indices) {
   indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+}
+
+
+/***************************************************
+  Camera movement function 
+  which decides object rotation
+****************************************************/
+function cameraMovement(event) {
+  var curX = 2 * event.clientX / canvas.width - 1;
+  var curY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+  theta = prevTheta + (curY - prevY) * Math.PI / 20;
+  phi = prevPhi - (curX - prevX) * Math.PI / 20;
+
+  eyeX = eyeX;
+  eyeY = eyeY * Math.cos(theta) - eyeZ * Math.sin(theta);
+  eyeZ = eyeY * Math.sin(theta) + eyeZ * Math.cos(theta);
+
+  eyeX = eyeX * Math.cos(phi) + eyeZ * Math.sin(phi);
+  eyeY = eyeY;
+  eyeZ = -eyeX * Math.sin(phi) + eyeZ * Math.cos(phi);
+
+  var normalizedEye = normalize(vec3(eyeX, eyeY, eyeZ));
+  eyeX = 11 * normalizedEye[0];
+  eyeY = 11 * normalizedEye[1];
+  eyeZ = 11 * normalizedEye[2];
+}
+
+/***************************************************
+  Camera listeners
+****************************************************/
+function camera() {
+  canvas.onmousedown = function (event) {
+    prevX = 2 * event.clientX / canvas.width - 1;
+    prevY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+    isCameraMoving = true;
+    canvas.style.cursor = "grabbing";
+  }
+
+  canvas.onmouseup = function (event) {
+    isCameraMoving = false;
+    prevTheta = theta;
+    prevPhi = phi;
+    canvas.style.cursor = "grab";
+  }
+
+  canvas.onmousemove = function (event) {
+    if (isCameraMoving) {
+      cameraMovement(event);
+      canvas.style.cursor = "grabbing";
+    }
+    else {
+      canvas.style.cursor = "grab";
+    }
+  }
+
+  canvas.onwheel = function (event) {
+    wheel = event.wheelDelta / 240;
+    fov = fov - wheel;
+  }
 }
 
 /*******************************************************************
