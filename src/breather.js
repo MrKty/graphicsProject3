@@ -38,7 +38,15 @@ let du = 0.5;
 let dv = 0.5;
 let aa = 0.5;
 
-var theta = [0.0, 0.0, 0.0];
+
+var theta = 0;
+var phi = 0;
+var prevX;
+var prevY;
+var prevTheta = 0;
+var prevPhi = 0;
+const rotationSpeed = 0.5; 
+const distanceToOrigin = 11; 
 
 
 var xAxis = 0;
@@ -111,6 +119,7 @@ window.onload = function init() {
   setupSlider("lightYSlider", "lightYText", "lightPositionY");
   setupSlider("lightZSlider", "lightZText", "lightPositionZ");
 
+  initializeCameraAngles();
   render();
 };
 
@@ -239,12 +248,7 @@ function generateBreatherIndices() {
 }
 
 
-var theta = 0;
-var phi = 0;
-var prevX;
-var prevY;
-var prevTheta = 0;
-var prevPhi = 0;
+
 
 // Set light and material properties as shader uniforms
 function setShaderUniforms() {
@@ -368,30 +372,25 @@ function processBuffers( vertices, normals, indices) {
 
 }
 
+  /***************************************************
+    Camera movement function 
+    which decides object rotation
+  ****************************************************/
+  function cameraMovement(event) {
+    var curX = 2 * event.clientX / canvas.width - 1;
+    var curY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+    theta = prevTheta + (curY - prevY) * rotationSpeed;
+    phi = prevPhi + (curX - prevX) * rotationSpeed;
 
-/***************************************************
-  Camera movement function 
-  which decides object rotation
-****************************************************/
-function cameraMovement(event) {
-  var curX = 2 * event.clientX / canvas.width - 1;
-  var curY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
-  theta = prevTheta + (curY - prevY) * Math.PI / 20;
-  phi = prevPhi - (curX - prevX) * Math.PI / 20;
+    eyeX = 100 * Math.cos(phi) * Math.cos(theta) * distanceToOrigin;
+    eyeY = -100 * Math.sin(theta) * distanceToOrigin;
+    eyeZ = 100 * Math.sin(phi) * Math.cos(theta) * distanceToOrigin;
 
-  eyeX = eyeX;
-  eyeY = eyeY * Math.cos(theta) - eyeZ * Math.sin(theta);
-  eyeZ = eyeY * Math.sin(theta) + eyeZ * Math.cos(theta);
-
-  eyeX = eyeX * Math.cos(phi) + eyeZ * Math.sin(phi);
-  eyeY = eyeY;
-  eyeZ = -eyeX * Math.sin(phi) + eyeZ * Math.cos(phi);
-
-  var normalizedEye = normalize(vec3(eyeX, eyeY, eyeZ));
-  eyeX = 11 * normalizedEye[0];
-  eyeY = 11 * normalizedEye[1];
-  eyeZ = 11 * normalizedEye[2];
-}
+    var normalizedEye = normalize(vec3(eyeX, eyeY, eyeZ));
+    eyeX = distanceToOrigin * normalizedEye[0];
+    eyeY = distanceToOrigin * normalizedEye[1];
+    eyeZ = distanceToOrigin * normalizedEye[2];
+  }
 
 /***************************************************
   Camera listeners
@@ -474,4 +473,14 @@ function dragElement(elmnt) {
     document.onmouseup = null;
     document.onmousemove = null;
   }
+}
+
+function initializeCameraAngles() {
+  var radius = Math.sqrt(eyeX * eyeX + eyeY * eyeY + eyeZ * eyeZ);
+  theta = Math.asin(eyeY / radius); // Elevation angle
+  phi = Math.atan2(eyeZ, eyeX); // Azimuthal angle
+
+    prevTheta = theta;
+    prevPhi = phi;
+
 }
