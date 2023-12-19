@@ -45,8 +45,8 @@ var prevX;
 var prevY;
 var prevTheta = 0;
 var prevPhi = 0;
-const rotationSpeed = 0.5; 
-const distanceToOrigin = 11; 
+const rotationSpeed = 0.5;
+const distanceToOrigin = 11;
 
 
 var xAxis = 0;
@@ -57,7 +57,7 @@ var axis = xAxis;
 // Define light and material properties
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
-var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0); 
+var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
 var materialAmbient = vec4(1.0, 1.0, 1.0, 1.0);
@@ -78,7 +78,6 @@ window.onload = function init() {
   gl.useProgram(program);
 
   // Draggable UI Elements
-  dragElement(document.getElementById("UISettings"));
 
   // Configure WebGL
   gl.viewport(0, 0, canvas.width, canvas.width);
@@ -129,9 +128,9 @@ window.onload = function init() {
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  gl.activeTexture( gl.TEXTURE0 );
-  gl.uniform1i(gl.getUniformLocation(program, "texMap"),0);
-  
+  gl.activeTexture(gl.TEXTURE0);
+  gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
+
   projectionMatrix = perspective(fov, 1, 0.02, 100);
   modelViewMatrix = lookAt(vec3(eyeX, eyeY, eyeZ), vec3(0, 0, 0), vec3(0, 1, 0));
 
@@ -156,7 +155,7 @@ function generateBreatherSurface() {
 
 function drawObject() {
 
-  processBuffers( verticesE, normalsE, indicesE);
+  processBuffers(verticesE, normalsE, indicesE);
 
 
   if (shaderMode === WIREFRAME) {
@@ -296,7 +295,7 @@ function configureCubeMap() {
 function loadCubeMapFace(url, target) {
   var image = new Image();
   image.onload = function () {
-      gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
   };
   image.src = url;
 }
@@ -304,7 +303,7 @@ function loadCubeMapFace(url, target) {
 function setupSlider(id, rangeId, variable) {
   document.getElementById(id).oninput = function () {
     var sliderValue = event.srcElement.value;
-    document.getElementById(rangeId).value = sliderValue;
+    document.getElementById(rangeId).textContent = sliderValue;
     switch (variable) {
       case "uRange":
         uRange = parseFloat(sliderValue);
@@ -341,8 +340,8 @@ function setupSlider(id, rangeId, variable) {
 /***************************************************
   Vertex buffers with colors
 ****************************************************/
-function processBuffers( vertices, normals, indices) {
-  
+function processBuffers(vertices, normals, indices) {
+
 
 
   // Load the vertex data into the GPU
@@ -368,29 +367,29 @@ function processBuffers( vertices, normals, indices) {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
 
- 
+
 
 }
 
-  /***************************************************
-    Camera movement function 
-    which decides object rotation
-  ****************************************************/
-  function cameraMovement(event) {
-    var curX = 2 * event.clientX / canvas.width - 1;
-    var curY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
-    theta = prevTheta + (curY - prevY) * rotationSpeed;
-    phi = prevPhi + (curX - prevX) * rotationSpeed;
+/***************************************************
+  Camera movement function 
+  which decides object rotation
+****************************************************/
+function cameraMovement(event) {
+  var curX = 2 * event.clientX / canvas.width - 1;
+  var curY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+  theta = prevTheta + (curY - prevY) * rotationSpeed;
+  phi = prevPhi + (curX - prevX) * rotationSpeed;
 
-    eyeX = 100 * Math.cos(phi) * Math.cos(theta) * distanceToOrigin;
-    eyeY = -100 * Math.sin(theta) * distanceToOrigin;
-    eyeZ = 100 * Math.sin(phi) * Math.cos(theta) * distanceToOrigin;
+  eyeX = 100 * Math.cos(phi) * Math.cos(theta) * distanceToOrigin;
+  eyeY = -100 * Math.sin(theta) * distanceToOrigin;
+  eyeZ = 100 * Math.sin(phi) * Math.cos(theta) * distanceToOrigin;
 
-    var normalizedEye = normalize(vec3(eyeX, eyeY, eyeZ));
-    eyeX = distanceToOrigin * normalizedEye[0];
-    eyeY = distanceToOrigin * normalizedEye[1];
-    eyeZ = distanceToOrigin * normalizedEye[2];
-  }
+  var normalizedEye = normalize(vec3(eyeX, eyeY, eyeZ));
+  eyeX = distanceToOrigin * normalizedEye[0];
+  eyeY = distanceToOrigin * normalizedEye[1];
+  eyeZ = distanceToOrigin * normalizedEye[2];
+}
 
 /***************************************************
   Camera listeners
@@ -426,61 +425,11 @@ function camera() {
   }
 }
 
-/*******************************************************************
-  Draggable UI Elements (Not modified)
- 
-  Taken from https://www.w3schools.com/howto/howto_js_draggable.asp
-********************************************************************/
-function dragElement(elmnt) {
-  var pos1 = 0,
-    pos2 = 0,
-    pos3 = 0,
-    pos4 = 0;
-  if (document.getElementById(elmnt.id + "Header")) {
-    // if present, the header is where you move the DIV from:
-    document.getElementById(elmnt.id + "Header").onmousedown = dragMouseDown;
-  } else {
-    // otherwise, move the DIV from anywhere inside the DIV:
-    elmnt.onmousedown = dragMouseDown;
-  }
-
-  function dragMouseDown(e) {
-    e = e || window.event;
-    e.preventDefault();
-    // get the mouse cursor position at startup:
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    // call a function whenever the cursor moves:
-    document.onmousemove = elementDrag;
-  }
-
-  function elementDrag(e) {
-    e = e || window.event;
-    e.preventDefault();
-    // calculate the new cursor position:
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    // set the element's new position:
-    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-  }
-
-  function closeDragElement() {
-    // stop moving when mouse button is released:
-    document.onmouseup = null;
-    document.onmousemove = null;
-  }
-}
-
 function initializeCameraAngles() {
   var radius = Math.sqrt(eyeX * eyeX + eyeY * eyeY + eyeZ * eyeZ);
   theta = Math.asin(eyeY / radius); // Elevation angle
   phi = Math.atan2(eyeZ, eyeX); // Azimuthal angle
 
-    prevTheta = theta;
-    prevPhi = phi;
-
+  prevTheta = theta;
+  prevPhi = phi;
 }
