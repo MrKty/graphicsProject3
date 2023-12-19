@@ -32,11 +32,11 @@ var normalsE = [];
 var loopSizeE = 0;
 
 // Variables
-let uRange = 14;
+let uRange = 24;
 let vRange = 30;
-let du = 0.5;
+let du = 0.4;
 let dv = 0.5;
-let aa = 0.5;
+let aa = 0.6;
 
 
 var theta = 0;
@@ -55,7 +55,7 @@ var zAxis = 2;
 var axis = xAxis;
 
 // Define light and material properties
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
+var lightPosition = vec4(0.2, 1.5, -2.0, 0.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
@@ -215,14 +215,16 @@ function generateBreatherNormals() {
       var v = verticesE[idx];
 
       // Calculate tangent vectors with respect to u and v
-      var tangentU = subtract(verticesE[(i + 1) * loopSizeE + j], v);
-      var tangentV = subtract(verticesE[i * loopSizeE + (j + 1)], v);
-
-      // Calculate normal using cross product
-      var normal = normalize(cross(tangentU, tangentV));
-
-      // Assign the normal to the current vertex
-      normalsE.push(normal);
+      if (verticesE[(i + 1) * loopSizeE + j] != undefined){
+        var tangentU = subtract(verticesE[(i + 1) * loopSizeE + j], v);
+        var tangentV = subtract(verticesE[i * loopSizeE + (j + 1)], v);
+  
+        // Calculate normal using cross product
+        var normal = normalize(cross(tangentU, tangentV));
+  
+        // Assign the normal to the current vertex
+        normalsE.push(normal);
+      }
     }
   }
 }
@@ -342,8 +344,6 @@ function setupSlider(id, rangeId, variable) {
 ****************************************************/
 function processBuffers(vertices, normals, indices) {
 
-
-
   // Load the vertex data into the GPU
   var vBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -395,19 +395,6 @@ function cameraMovement(event) {
   Camera listeners
 ****************************************************/
 function camera() {
-  canvas.onmousedown = function (event) {
-    prevX = 2 * event.clientX / canvas.width - 1;
-    prevY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
-    isCameraMoving = true;
-    canvas.style.cursor = "grabbing";
-  }
-
-  canvas.onmouseup = function (event) {
-    isCameraMoving = false;
-    prevTheta = theta;
-    prevPhi = phi;
-    canvas.style.cursor = "grab";
-  }
 
   canvas.onmousemove = function (event) {
     if (isCameraMoving) {
@@ -418,6 +405,21 @@ function camera() {
       canvas.style.cursor = "grab";
     }
   }
+
+  canvas.onmouseup = function (event) {
+    isCameraMoving = false;
+    prevTheta = theta;
+    prevPhi = phi;
+    canvas.style.cursor = "grab";
+  }
+
+  canvas.onmousedown = function (event) {
+    prevX = 2 * event.clientX / canvas.width - 1;
+    prevY = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+    isCameraMoving = true;
+    canvas.style.cursor = "grabbing";
+  }
+
 
   canvas.onwheel = function (event) {
     wheel = event.wheelDelta / 240;
