@@ -1,8 +1,8 @@
-  <!DOCTYPE html>
-  <html>
+<!DOCTYPE html>
+<html>
 
-  <head>
-    <script id="vertex-shader" type="x-shader/x-vertex">
+<head>
+  <script id="vertex-shader" type="x-shader/x-vertex">
       precision mediump float;
 
       attribute vec4 vPosition;
@@ -78,7 +78,7 @@
       }
     </script>
 
-    <script id="fragment-shader" type="x-shader/x-fragment">
+  <script id="fragment-shader" type="x-shader/x-fragment">
         precision mediump float;
         
         varying vec4 fColor;
@@ -95,7 +95,9 @@
         void main() 
         { 
           vec4 texColor = textureCube(texMap, R);
-          if (fShaderType != 1.0) {
+          if (fShaderType == 0.0) {
+            gl_FragColor = fColor;
+          } else if (fShaderType == 2.0) {
             gl_FragColor =  fColor * texColor;
           } else {  
             vec4 phongColor;
@@ -124,143 +126,126 @@
         }
     </script>
 
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <script type="text/javascript" src="../common/webgl-utils.js"></script>
-    <script type="text/javascript" src="../common/initShaders.js"></script>
-    <script type="text/javascript" src="../common/MV.js"></script>
-    <script type="text/javascript" src="breather.js"></script>
-    <link rel="stylesheet" href="../styles/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../styles/custom.css">
-  </head>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <script type="text/javascript" src="../common/webgl-utils.js"></script>
+  <script type="text/javascript" src="../common/initShaders.js"></script>
+  <script type="text/javascript" src="../common/MV.js"></script>
+  <script type="text/javascript" src="breather.js"></script>
+  <link rel="stylesheet" href="../styles/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../styles/custom.css">
+</head>
 
-  <body>
-    <canvas id="gl-canvas" width="700" height="700" name="canvas">
-      Oops ... your browser doesn't support the HTML5 canvas element
-    </canvas>
+<body>
+  <canvas id="gl-canvas" width="730" height="730" name="canvas">
+    Oops ... your browser doesn't support the HTML5 canvas element
+  </canvas>
 
-    <div id="settings" class="container">
-      <div class="fw-bold ">Settings</div>
-      <div class="break15"></div>
-      <div class="startBox">
-        <div class="columnBox">
-          <label class="container">Wireframe
-            <input type="radio" checked="checked" name="radioShader" id="Wireframe">
-            <span class="checkmark"></span>
-          </label>
-          <label class="container">Phong
-            <input type="radio" name="radioShader" id="Phong">
-            <span class="checkmark"></span>
-          </label>
-          <label class="container">Gouraud
-            <input type="radio" name="radioShader" id="Gouraud">
-            <span class="checkmark"></span>
-          </label>
-        </div>
+  <div id="settings" class="container">
+    <div class="fw-bold card-header">Settings</div>
+    <div class="form-group card">
+      <label>Shader Options:</label>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="radio" id="Wireframe" checked>
+        <label class="form-check-label" for="Wireframe">Wireframe</label>
       </div>
-      <div class="break15"></div>
-      <div class="break5"></div>
-      <div class="columnBox">
-        <div class="box">
-          <div class="textDiv">
-            U Range:
-          </div>
-          <input type="text" id="uRange" class="sliderValues" value="14" disabled>
-          <div class="numberDiv">
-            0
-            <input id="uSlider" type="range" min="0" max="28" step="1" value="14" />
-            28
-          </div>
-        </div>
-        <div class="break15"></div>
-        <div class="box">
-          <div class="textDiv">
-            V range:
-          </div>
-          <input type="text" id="vRange" class="sliderValues" value="30" disabled>
-          <div class="numberDiv">
-            0
-            <input id="vSlider" type="range" min="0" max="37.5" step="1" value="30" />
-            37.5
-          </div>
-        </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="radio" id="Phong">
+        <label class="form-check-label" for="Phong">Phong</label>
       </div>
-      <div class="break15"></div>
-      <div class="break5"></div>
-      <div class="columnBox">
-        <div class="box">
-          <div class="textDiv">
-            du:
-          </div>
-          <input type="text" id="duText" class="sliderValues" value="0.5" disabled>
-          <div class="numberDiv">
-            0.1
-            <input id="dUSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
-            1.0
-          </div>
-        </div>
-        <div class="break15"></div>
-        <div class="box">
-          <div class="textDiv">
-            dv:
-          </div>
-          <input type="text" id="dvText" class="sliderValues" value="0.5" disabled>
-          <div class="numberDiv">
-            0.1
-            <input id="dVSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
-            1.0
-          </div>
-        </div>
-        <div class="break15"></div>
-        <div class="box">
-          <div class="textDiv">
-            aa:
-          </div>
-          <input type="text" id="aaText" class="sliderValues" value="0.5" disabled>
-          <div class="numberDiv">
-            0.1
-            <input id="aaSlider" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
-            1.0
-          </div>
-        </div>
-      </div>
-      <div class="columnBox">
-        <div class="box">
-          <div class="textDiv">
-            Light X:
-          </div>
-          <input type="text" id="lightXText" class="sliderValues" value="1.0" disabled>
-          <div class="numberDiv">
-            -1.0
-            <input id="lightXSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
-            2.0
-          </div>
-        </div>
-        <div class="break15"></div>
-        <div class="box">
-          <div class="textDiv">
-            Light Y:
-          </div>
-          <input type="text" id="lightYText" class="sliderValues" value="1.0" disabled>
-          <div class="numberDiv">
-            0.0
-            <input id="lightYSlider" type="range" min="0.0" max="4.0" step="0.1" value="1.0" />
-            4.0
-          </div>
-        </div>
-        <div class="break15"></div>
-        <div class="box">
-          <div class="textDiv">
-            Light Z:
-          </div>
-          <input type="text" id="lightZText" class="sliderValues" value="1.0" disabled>
-          <div class="numberDiv">
-            0.0
-            <input id="lightZSlider" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
-            2.0
-          </div>
-        </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="radio" id="Gouraud">
+        <label class="form-check-label" for="Gouraud">Gouraud</label>
       </div>
     </div>
-  </body>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">U Range:</span>
+        <span id="uRange" class="ml-2 col-8">14</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">0</span>
+        <input id="uSlider" class="col-8" type="range" min="0" max="28" step="1" value="14" />
+        <span class="col-2">28</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">V Range:</span>
+        <span id="vRange" class="ml-2 col-8">30</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">0</span>
+        <input id="vSlider" class="col-8" type="range" min="0" max="37.5" step="1" value="30" />
+        <span class="col-2">37.5</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">du:</span>
+        <span id="duText" class="ml-2 col-8">0.5</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">0.1</span>
+        <input id="dUSlider" class="col-8" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+        <span class="col-2">1.0</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">dv:</span>
+        <span id="dvText" class="ml-2 col-8">0.5</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">0.1</span>
+        <input id="dVSlider" class="col-8" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+        <span class="col-2">1.0</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">aa:</span>
+        <span id="aaText" class="ml-2 col-8">0.5</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">0.1</span>
+        <input id="aaSlider" class="col-8" type="range" min="0.1" max="1.0" step="0.1" value="0.5" />
+        <span class="col-2">1.0</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">Light X:</span>
+        <span id="lightXText" class="ml-2 col-8">1.0</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">-2.0</span>
+        <input id="lightXSlider" class="col-8" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
+        <span class="col-2">2.0</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">Light Y:</span>
+        <span id="lightYText" class="ml-2 col-8">1.0</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">0.0</span>
+        <input id="lightYSlider" class="col-8" type="range" min="0.0" max="4.0" step="0.1" value="1.0" />
+        <span class="col-2">4.0</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row m-auto">
+        <span class="col-2">Light Z:</span>
+        <span id="lightZText" class="ml-2 col-8">1.0</span>
+      </div>
+      <div class="row m-auto">
+        <span class="col-1">-2.0</span>
+        <input id="lightZSlider" class="col-8" type="range" min="-2.0" max="2.0" step="0.1" value="1.0" />
+        <span class="col-2">2.0</span>
+      </div>
+    </div>
+  </div>
+</body>
 
-  </html>
+</html>

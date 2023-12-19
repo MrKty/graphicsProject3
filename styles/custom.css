@@ -1,4 +1,21 @@
 body {
     display: flex;
     flex-direction: row;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.row {
+    padding-top: 5px;
+}
+
+.card {
+    padding: 10px;
 }
